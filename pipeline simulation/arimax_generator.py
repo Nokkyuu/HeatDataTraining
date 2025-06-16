@@ -12,7 +12,9 @@ warnings.filterwarnings('ignore')
 
 class ARIMAXHeatingGenerator:
     """
-    ARIMAX-basierter Generator für Domestic Hot Water Daten - Vereinfacht und mit Model Persistence
+    Data generator for domestic hot water heating data using ARIMAX model with anomaly injections.
+    Based on unsupervised anomaly detection of simple heating data. 
+    For details about the creation of the training data, see anomaly_labeling.py
     """
     
     def __init__(self, order=(2, 1, 2), seasonal_order=(1, 1, 1, 24)):

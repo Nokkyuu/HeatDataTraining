@@ -140,7 +140,7 @@ class ImprovedAnomalyLabeler:
             df['time_diff_z_score'] = np.abs((df['time_diff_min'] - mean_time_diff) / (std_time_diff + 1e-8))
     
     def _add_rate_features(self, df):
-        """Fügt Raten-Features hinzu (Änderung pro Zeiteinheit)"""
+        """adds change rates per minute for numeric columns"""
         numeric_cols = ['avg', 'min_v', 'max_v', 'T_diff']
         
         for col in numeric_cols:
@@ -162,7 +162,7 @@ class ImprovedAnomalyLabeler:
                 df[f'{col}_rate_per_min'] = rates
     
     def detect_anomalies(self, df, system_type='domestic'):
-        """Erkennt Anomalien - OHNE Time-Anomalien"""
+        """Anomaly detection using Isolation Forest as unsupervised ML model and additional methods"""
         if system_type and 'type' in df.columns:
             df_filtered = df[df['type'] == system_type].copy().reset_index(drop=True)
         else:
@@ -173,28 +173,28 @@ class ImprovedAnomalyLabeler:
         # Zeitdifferenz-Statistiken (nur zur Info)
         if 'time_diff_min' in df_filtered.columns:
             time_stats = df_filtered['time_diff_min'].describe()
-            print(f"\nZeitdifferenz Statistiken (Minuten):")
+            print(f"\nTime difference in minutes:")
             print(f"  Median: {time_stats['50%']:.1f}")
             print(f"  Mean: {time_stats['mean']:.1f}")
             print(f"  Min: {time_stats['min']:.1f}")
             print(f"  Max: {time_stats['max']:.1f}")
         
-        # Features erstellen
+        # feature engineering
         features = self.create_features(df_filtered)
-        print(f"\nErstellt {features.shape[1]} Features")
+        print(f"\nCreate {features.shape[1]} Features")
         
-        # Skalierung
+        # scaling
         features_scaled = self.scaler.fit_transform(features)
         
         # Isolation Forest
         anomaly_scores = self.isolation_forest.fit_predict(features_scaled)
         anomaly_scores_proba = self.isolation_forest.score_samples(features_scaled)
         
-        # NUR relevante Anomalie-Erkennungen
+        # anomaly detection
         statistical_anomalies = self._detect_statistical_anomalies(df_filtered)
         domain_anomalies = self._detect_domain_anomalies(df_filtered)
         
-        # Kombiniere nur die relevanten Methoden
+        # combination
         combined_anomalies = (
             (anomaly_scores == -1) | 
             statistical_anomalies | 
@@ -211,7 +211,7 @@ class ImprovedAnomalyLabeler:
         return results
     
     def _detect_statistical_anomalies(self, df):
-        """Erkennt statistische Anomalien basierend auf Z-Score"""
+        """detect anomalies using statistical methods (Z-Score)"""
         anomalies = np.zeros(len(df), dtype=bool)
         
         numeric_cols = ['avg', 'min_v', 'max_v', 'T_diff']  # time_diff_min entfernt
@@ -223,10 +223,10 @@ class ImprovedAnomalyLabeler:
         return anomalies
     
     def _detect_domain_anomalies(self, df):
-        """Erkennt domain-spezifische Anomalien für Heizungsdaten"""
+        """detect domain-specific anomalies based on known constraints"""
         anomalies = np.zeros(len(df), dtype=bool)
         
-        # Unmögliche Temperaturbereiche
+        # Impossible temperatures
         if 'avg' in df.columns:
             anomalies |= (df['avg'] < -10) | (df['avg'] > 100)
             
@@ -239,25 +239,25 @@ class ImprovedAnomalyLabeler:
         return anomalies
     
     def visualize_anomalies(self, results):
-        """Visualisiert erkannte Anomalien - ohne Time-Anomalien"""
+        """visualizes the detected anomalies in a comprehensive way"""
         fig, axes = plt.subplots(2, 3, figsize=(18, 12))
         axes = axes.flatten()
         
         results['datetime'] = pd.to_datetime(results['timestamp'])
         
-        # Plot für jede numerische Spalte
+        
         numeric_cols = ['avg', 'min_v', 'max_v', 'T_diff', 'time_diff_min']
         
         for i, col in enumerate(numeric_cols):
             if col in results.columns and i < len(axes):
                 ax = axes[i]
                 
-                # Normale Punkte
+                # Scatter plot for each numeric column
                 normal_data = results[~results['is_anomaly']]
                 ax.scatter(normal_data['datetime'], normal_data[col], 
                           alpha=0.6, label='Normal', s=1, color='blue')
                 
-                # Anomalien nach Typ
+                # anomalies by type
                 for anomaly_type, color in [
                     ('isolation_forest_anomaly', 'red'),
                     ('statistical_anomaly', 'orange'),
@@ -276,7 +276,7 @@ class ImprovedAnomalyLabeler:
                 ax.legend()
                 ax.tick_params(axis='x', rotation=45)
         
-        # Anomalie-Score Verteilung
+        # Anomalie-Score distribution
         if len(axes) > 5:
             ax = axes[5]
             ax.hist(results[~results['is_anomaly']]['anomaly_score'], 
@@ -294,7 +294,7 @@ class ImprovedAnomalyLabeler:
         self._print_detailed_stats(results)
     
     def _print_detailed_stats(self, results):
-        """Druckt detaillierte Anomalie-Statistiken - ohne Time-Anomalien"""
+        """prints anomaly statistics and breakdowns"""
         print(f"\n=== ANOMALIE ANALYSE (ohne Time-Anomalien) ===")
         print(f"Gesamtanzahl Datenpunkte: {len(results)}")
         print(f"Erkannte Anomalien: {results['is_anomaly'].sum()}")
@@ -307,7 +307,7 @@ class ImprovedAnomalyLabeler:
                 rate = results[anomaly_type].mean()
                 print(f"- {anomaly_type.replace('_', ' ').title()}: {count} ({rate:.2%})")
         
-        # Kategorien-Verteilung bei Anomalien
+        # category-wise anomaly analysis
         if 'type' in results.columns:
             print(f"\n=== ANOMALIEN NACH KATEGORIEN ===")
             anomaly_by_type = results.groupby('type').agg({
@@ -315,24 +315,24 @@ class ImprovedAnomalyLabeler:
             }).round(3)
             print(anomaly_by_type)
 
-# Verwenden des bereinigten Labelers
+
 if __name__ == "__main__":
-    df = pd.read_csv('../data/combined_data.csv')
+    df = pd.read_csv('data/combined_data.csv')
     
-    print("=== BEREINIGTES ANOMALIE-LABELING (ohne Time-Anomalien) ===")
-    print("Vorhandene Spalten:", df.columns.tolist())
-    print(f"Anzahl Datenpunkte: {len(df)}")
+    print("=== Anomaly Labeling - Unsupervised ===")
+    print("Existing Columns:", df.columns.tolist())
+    print(f"Data Points: {len(df)}")
     
     if 'type' in df.columns:
-        print(f"Anzahl pro Typ:\n{df['type'].value_counts()}")
+        print(f"Numbers per type:\n{df['type'].value_counts()}")
     
-    # Anomalien erkennen (ohne Time-Anomalien)
+    # anomaly detection and labeling
     labeler = ImprovedAnomalyLabeler(contamination=0.05)
-    labeled_data = labeler.detect_anomalies(df, system_type='domestic')
+    labeled_data = labeler.detect_anomalies(df, system_type='domestic') #concentration on domestic hot water for ease of use
     
-    # Visualisierung
+    # visualisation
     labeler.visualize_anomalies(labeled_data)
     
     # Speichern der bereinigten gelabelten Daten
     labeled_data.to_csv('data/labeled_training_data_cleaned.csv', index=False)
-    print("\n✅ Bereinigte gelabelte Trainingsdaten gespeichert!")
+    print("\n✅ cleaned and labeled data saved to '../data/labeled_training_data_cleaned.csv'")
