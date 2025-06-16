@@ -489,7 +489,7 @@ def scheduled_validation_flow(
 
 class ContinuousPipelineRunner:
     """
-    Einfacher kontinuierlicher Pipeline Runner
+    simple continuous runner for the ARIMAX + Ensemble Validation Pipeline
     """
     def __init__(self, interval_minutes: int = 120):
         self.interval_minutes = interval_minutes
@@ -502,16 +502,16 @@ class ContinuousPipelineRunner:
         signal.signal(signal.SIGTERM, self.signal_handler)
     
     def signal_handler(self, sig, frame):
-        print(f"\n🛑 Shutdown Signal empfangen...")
+        print(f"\n🛑 shut down...")
         self.running = False
     
     def run_continuous(self):
         """
         Läuft kontinuierlich mit definiertem Intervall
         """
-        print(f"🚀 === KONTINUIERLICHE ANOMALIE-VALIDIERUNG ===")
-        print(f"⏰ Intervall: {self.interval_minutes} Minuten")
-        print(f"🛑 Stoppen mit Ctrl+C")
+        print(f"🚀 === CONTINUOUS RUN ===")
+        print(f"⏰ Run every: {self.interval_minutes} minutes")
+        print(f"🛑 stop with Ctrl+C")
         print("="*60)
         
         while self.running:
@@ -540,15 +540,15 @@ class ContinuousPipelineRunner:
                 print(f"   📁 Report: reports/arimax_ensemble_validation_{result['timestamp'].replace(' ', '_').replace(':', '')}.html")
                 
             except Exception as e:
-                print(f"❌ Run #{self.run_count} FEHLER: {e}")
+                print(f"❌ Run #{self.run_count} ERROR: {e}")
                 # Kurzer Traceback für Debug
                 import traceback
-                print("🔍 Kurzer Error-Trace:")
+                print("🔍 error trace:")
                 traceback.print_exc(limit=3)
             
             if self.running:
-                print(f"\n💤 Warte {self.interval_minutes} Minuten bis zum nächsten Run...")
-                print(f"🛑 Jederzeit stoppen mit Ctrl+C")
+                print(f"\n💤 wait {self.interval_minutes} minutes to run again")
+                print(f"🛑 stop with Ctrl+C")
                 
                 # Sleep mit Interrupt-Check (alle 10 Sekunden prüfen)
                 total_seconds = self.interval_minutes * 60
@@ -558,7 +558,7 @@ class ContinuousPipelineRunner:
                     
                     remaining_minutes = (total_seconds - i) // 60
                     if i % 60 == 0 and remaining_minutes > 0:  # Jede Minute update
-                        print(f"⏳ Noch {remaining_minutes} Minuten...")
+                        print(f"⏳ {remaining_minutes} minutes remaining...")
                     
                     time.sleep(min(10, total_seconds - i))
         
@@ -592,51 +592,51 @@ def run_pipeline_once():
 
 def run_continuous_pipeline(interval_minutes: int = 120):
     """
-    Startet kontinuierliche Pipeline
+    start contiuos pipeline
     """
     runner = ContinuousPipelineRunner(interval_minutes=interval_minutes)
     runner.run_continuous()
 
 def interactive_menu():
     """
-    Interaktives Menü für Pipeline Control
+    Interactive Menue
     """
     print("🎛️ === PREFECT PIPELINE CONTROL ===")
     
     while True:
-        print(f"\nOptionen:")
-        print("1. Single Run (Pipeline einmal ausführen)")
-        print("2. Continuous Run (Kontinuierlich ausführen)")
+        print(f"\nOptions:")
+        print("1. Single Run")
+        print("2. Continuous Run")
         print("3. Exit")
         
-        choice = input("\nWähle Option (1-3): ").strip()
+        choice = input("\nChoose 1-3): ").strip()
         
         if choice == "1":
             print("\n" + "="*50)
             run_pipeline_once()
             
         elif choice == "2":
-            interval_input = input("Intervall in Minuten (default: 120): ").strip()
+            interval_input = input("Interval in minutes: ").strip()
             
             try:
                 interval = int(interval_input) if interval_input else 120
                 if interval < 1:
-                    print("❌ Intervall muss mindestens 1 Minute sein!")
+                    print("❌ Interval needs to be at least 1 minute!")
                     continue
                     
-                print(f"\n🚀 Starte kontinuierliche Pipeline mit {interval} Min Intervall...")
+                print(f"\n🚀 Start pipeline with {interval} min intervals...")
                 print("="*50)
                 run_continuous_pipeline(interval_minutes=interval)
                 
             except ValueError:
-                print("❌ Ungültiges Intervall! Bitte Zahl eingeben.")
+                print("❌ give a number.")
                 
         elif choice == "3":
-            print("👋 Auf Wiedersehen!")
+            print("👋 Bye!")
             break
             
         else:
-            print("❌ Ungültige Option! Bitte 1, 2 oder 3 wählen.")
+            print("❌ not an option, choose 1-3.")
 
 
 if __name__ == "__main__":
@@ -646,15 +646,15 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1] == "continuous":
             interval = int(sys.argv[2]) if len(sys.argv) > 2 else 120
-            print(f"🚀 Starte kontinuierliche Pipeline (alle {interval} Min)...")
+            print(f"🚀 start continuous pipeline (every {interval} min)...")
             run_continuous_pipeline(interval_minutes=interval)
             
         elif sys.argv[1] == "once":
-            print("🚀 Führe Pipeline einmal aus...")
+            print("🚀 Run pipeline once")
             run_pipeline_once()
             
         else:
-            print("❌ Unbekanntes Argument. Verwende 'once' oder 'continuous [interval]'")
+            print("❌ unknown command'")
             sys.exit(1)
     else:
         # Interaktives Menü als default

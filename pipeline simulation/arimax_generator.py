@@ -19,7 +19,7 @@ class ARIMAXHeatingGenerator:
     
     def __init__(self, order=(2, 1, 2), seasonal_order=(1, 1, 1, 24)):
         """
-        Vereinfachte Konfiguration für schnelles Training
+        simple configuration for quick training
         """
         self.order = order
         self.seasonal_order = seasonal_order
@@ -413,8 +413,5 @@ def main(retrain=False, generate_hours=1000):
     return synthetic_df
 
 if __name__ == "__main__":
-    # Standard-Ausführung (verwendet gespeichertes Modell falls vorhanden)
-    #synthetic_data = main(retrain=False, generate_hours=1000)
-    
-    # Für Neutraining verwenden Sie:
+
      synthetic_data = main(retrain=True, generate_hours=1000)

@@ -60,7 +60,7 @@ class BaseDetector(ABC):
         """Lädt einen trainierten Detector"""
         pass
 
-class LSTMAutoencoder(nn.Module):
+class LSTMAutoencoder(nn.Module): #NOT USED ANYMORE
     """
     LSTM Autoencoder für Zeitreihen-Anomalie-Erkennung
     """
@@ -110,7 +110,7 @@ class LSTMAutoencoder(nn.Module):
         
         return output
 
-class LSTMDetector(BaseDetector):
+class LSTMDetector(BaseDetector): #NOT USED ANYMORE
     """
     LSTM Autoencoder Anomalie-Detector mit vollständiger Persistierung
     """
@@ -1152,13 +1152,12 @@ def main_phase1(retrain: bool = False, detailed_analysis: bool = True):
     return ensemble
 
 if __name__ == "__main__":
-    # Ausführung mit detaillierter Analyse
     result = main_phase1(retrain=True, detailed_analysis=True)
     
     if isinstance(result, tuple):
         ensemble, analysis_results, validation_passed = result
         
-        print(f"\n✅ Ensemble Anomaly Detector abgeschlossen!")
+        print(f"\n done")
         
         if analysis_results:
             print(f"🎯 Anomalie-Detection Qualität:")
@@ -1166,7 +1165,3 @@ if __name__ == "__main__":
             print(f"   Precision: {analysis_results['precision']:.3f}")
             print(f"   F1-Score: {analysis_results['f1']:.3f}")
         
-        if validation_passed:
-            print("✅ Prefect-Validierung: ERFOLGREICH")
-        else:
-            print("❌ Prefect-Validierung: FEHLGESCHLAGEN")
