@@ -164,3 +164,4 @@ The pipeline provides:
 
 - Designed for **domestic hot water** systems initially
 - Easily extensible to **forward flow temperature** data due to modular construction
+- will be extended for real time analysis besides the current batch version.
